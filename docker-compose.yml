@@ -1,0 +1,70 @@
+version: '3'
+services:
+  
+  #PHP Service
+  app:
+    container_name: task_app
+    build:
+      context: ./docker
+      dockerfile: app.dockerfile
+    working_dir: /var/www
+    volumes:
+            - ./:/var/www
+    restart: unless-stopped
+    tty: true
+    networks:
+      - app-network
+
+  #Web Server(NGINX)
+  web:
+    container_name: task_web
+    build:
+        context: ./docker
+        dockerfile: web.dockerfile
+    working_dir: /var/www
+    volumes:
+        - ./:/var/www
+    ports:
+        - 8000:80
+    networks:
+      - app-network
+
+  #MySQL Service
+  db:
+    container_name: task_db
+    image: mariadb
+    restart: unless-stopped
+    tty: true
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_DATABASE: task
+      MYSQL_USERNAME: task
+      MYSQL_PASSWORD: task
+      MYSQL_ROOT_PASSWORD: task
+    volumes:
+      - ./dbdata:/var/lib/mysql/
+      # - ./mysql/my.cnf:/etc/mysql/my.cnf
+    networks:
+      - app-network
+
+  phpmyadmin:
+    container_name: task_pma
+    image: phpmyadmin
+    restart: always
+    ports:
+      - 8080:80
+    environment:
+      - PMA_ARBITRARY=1
+      - PMA_HOST=task_db
+      - PMA_USER=root
+      - PMA_PASSWORD=task
+      - MAX_EXECUTION_TIME=3600
+      - UPLOAD_LIMIT=512M
+    networks:
+      - app-network
+
+#Docker Networks
+networks:
+  app-network:
+    driver: bridge
